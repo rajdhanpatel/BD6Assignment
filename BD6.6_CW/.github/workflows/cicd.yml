@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main] # Deploy on changes to the main branch
+  pull_request:
+    branches: [main] # Optionally run checks on pull requests targeting main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [22.x]
+              
+      # Step 1: Checkout the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.node-version}} # Match the Node.js version used in your project
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Run build command (if your project requires it)
+      - name: Run tests
+        run: npm test
+        
+      - nme: Install vercel CLI
+        run: npm install --global vercel@canary
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --evnironment=production --token=${{secrets.VERCEL_TOKEN}}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{secrets.VERCEL_TOKEN}}
+
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{secrets.VERCEL_TOKEN}}
+    
